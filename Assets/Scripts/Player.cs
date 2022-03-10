@@ -7,7 +7,7 @@ using TMPro;
 
 public class Player : MonoBehaviour
 {
-    public int WINNING_SCORE = 10;
+    public int WINNING_AMOUNT = 3;
     public float sphereRadius = 2.0f;
     public float maxSphereRadius = 50.0f;
     int layerMask = 0; // Collectibles
@@ -23,7 +23,7 @@ public class Player : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        this.mainCameraTrans = this.gameObject.transform.Find("Main Camera");
+        this.mainCameraTrans = this.gameObject.transform; // this.gameObject.transform.Find("Main Camera");
 
         this.totalScoreTxt = mainCameraTrans.Find("totalScore").gameObject.GetComponent<TextMeshPro>();
         this.totalCollectedTxt = mainCameraTrans.Find("totalCollected").gameObject.GetComponent<TextMeshPro>();
@@ -34,7 +34,7 @@ public class Player : MonoBehaviour
     }
 
     void checkForWin() {
-        if (this.totalScore >= WINNING_SCORE) {
+        if (this.totalUnique >= WINNING_AMOUNT) {
             this.winTxt.gameObject.SetActive(true);
         }
     }
@@ -73,18 +73,19 @@ public class Player : MonoBehaviour
             goldCollected = true;
             this.totalUnique++;
         }
+
+        checkForWin();
     }
 
-    bool handleCollision(GameObject collidedObject) {
+    void handleCollision(GameObject collidedObject) {
         Collectible collectibleObj = collidedObject.GetComponent<Collectible>();
 
         if (collectibleObj == null)
-            return false;
+            return;
 
         pickupCollectible(collectibleObj);
 
         Destroy(collidedObject);
-        return true;
     }
 
     void doLineRaycast() {
@@ -107,19 +108,11 @@ public class Player : MonoBehaviour
     }
 
     double getDistance(Transform other) {
-        float myXSquard = mainCameraTrans.position.x * mainCameraTrans.position.x;
-        float myYSquard = mainCameraTrans.position.y * mainCameraTrans.position.y;
-        float myZSquard = mainCameraTrans.position.z * mainCameraTrans.position.z;
+        float xDiff = this.mainCameraTrans.position.x - other.position.x;
+        float yDiff = this.mainCameraTrans.position.y - other.position.y;
+        float zDiff = this.mainCameraTrans.position.z - other.position.z;
 
-        float otherXSquard = other.position.x * other.position.x;
-        float otherYSquared = other.position.y * other.position.y;
-        float otherZSquard = other.position.z * other.position.z;
-
-        float xDiff = myXSquard - otherXSquard;
-        float yDiff = myYSquard - otherYSquared;
-        float zDiff = myZSquard - otherZSquard;
-
-        return Math.Sqrt(xDiff + yDiff + zDiff);
+        return Math.Sqrt(Math.Pow(xDiff, 2) + Math.Pow(yDiff, 2) + Math.Pow(zDiff, 2));
     }
 
     void doSpherecast() {
@@ -135,6 +128,11 @@ public class Player : MonoBehaviour
                                                         QueryTriggerInteraction.Collide);
             GameObject closest = null;
             GameObject tmpObj = null;
+
+            if (collided.Length == 0) {
+                curSphereRadius += 1.0f;
+                continue;
+            }
 
             foreach(Collider collidedObj in collided) {
                 print(collidedObj.gameObject.name);
@@ -153,7 +151,6 @@ public class Player : MonoBehaviour
                 handleCollision(closest);
             }
             
-            curSphereRadius += 1.0f;
         }
     }
 
